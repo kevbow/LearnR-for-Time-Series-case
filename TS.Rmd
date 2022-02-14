@@ -1,0 +1,375 @@
+---
+title: "Time Series & Forecasting"
+author: "Team Algoritma"
+date: "1/17/2022"
+output: 
+  learnr::tutorial:
+  fig.show : 'asis'
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr) # user interface for coding exercise
+knitr::opts_chunk$set(echo = TRUE)
+
+library(fpp2) # usconsumtion
+library(tidyverse) # data wrangling
+library(lubridate) # date manipulation
+library(forecast) # time series library
+library(MLmetrics) # calculate error
+library(tseries) # adf.test
+library(ggplot2) # plotting
+library(padr) # complete data frame
+library(zoo) # Missing value imputation
+theme_set(theme_minimal())
+```
+## Introduction
+
+Hi _Future Data Scientist_! Dalam _course_ ini kita akan membahas mengenai *Time Series and Forecasting*. Data time series merupakan data yang dikumpulkan dari waktu ke waktu dengan interval yang tetap dan disusun secara berurutan berdasarkan waktunya, sementara forecasting merupakan pembuatan model untuk mempelajari data historis dengan tujuan memprediksi nilai di masa depan. 
+
+Data time series biasanya akan berbentuk numerik dan bersifat kontinyu, jika demikian maka akan muncul pertanyaan lain yaitu apa perbedaan time series forecasting dengan regresi. Perbedaan yang mendasar dari kedua metode tersebut terletak pada prediktor atau nilai yang digunakan untuk melakukan prediksi. Pada metode regresi, prediktor yang digunakan berupa variabel eksternal yang mempengaruhi variabel target. Sedangkan pada metode time series prediktor yang digunakan adalah variabel target itu sendiri berdasarkan data historisnya atau data masa lampau. Perumusan matematika dari keduanya yaitu:
+
+*Regression*
+
+$$y = \beta_0+\beta_1*x_1+\beta_2*x_2+...+\beta_n*x_n$$
+
+*Time Series*
+
+$$y_t = \beta_0+\beta_1*y_{t-1}+\beta_2*y_{t-2}+...+\beta_n*y_{t-n}$$
+Beberapa karakteristik data time series yang harus kita miliki sebelum melakukan pemodelan yaitu:
+
+1. Data harus terurut berdasarkan periode waktunya
+2. Tidak boleh ada waktu atau periode yang terlewat (ada gap antar interval)
+3. Tidak boleh ada data yang missing
+
+Setelah memastikan ketiga hal tersebut sudah terpenuhi maka data time series sudah dapat kita olah lebih lanjut. Pengolahan tersebut berupa pengubahan bentuk data menjadi time series object, melakukan splitting data untuk training dan validasi, baru melakukan forecasting. Beberapa jenis metode forecasting yang dapat digunakan yaitu:
+
+1. Simple Moving Average → jenis forecasting yang paling dasar
+2. Exponential Smoothing
+    - Simple Exponential Smoothing (SES) → model yang digunakan untuk tipe data tanpa seasonal dan tanpa trend.
+    - Double Exponential Smoothing (Holts Exponential Smoothing) → model yang digunakan untuk tipe data tanpa seasonal tetapi memiliki trend.
+    - Triple Exponential Smoothing (Holts Winter) → model yang digunakan untuk tipe data dengan seasonal dan trend.
+3. Autoregresive Integrated Moving Average (ARIMA) → model yang dapat digunakan untuk tipe data dengan seasonal dan trend.
+
+Dengan beberapa metode forecasting di atas maka analisis time series kita hampir selesai. Setelah itu kita tinggal melihat seberapa baik model yang kita buat. Metric yang dapat digunakan untuk melakukan evaluasi model yaitu MAPE.
+
+## Data 1
+Pada latihan ini kita akan menggunakan data temperatur maksimum tahunan di Moorabbin Airport, Melbourne pada tahun 1971 - 2016. Pada data ini terdapat dua variabel yaitu tahun pengukuran serta temperatur maksimum pada tahun tersebut dengan satuan derajat Celcius. 
+
+### 1. Memeriksa kesiapan data time series
+1.1 Membaca data yang akan digunakan
+```{r data1, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+data1 <- data.frame(fpp2::maxtemp) %>% 
+  rename(temp = fpp2..maxtemp) %>% 
+  rownames_to_column(var = 'year') %>% 
+  mutate(year = as.numeric(year))
+```
+  
+```{r}
+head(data1)
+```
+**EDIT**
+1.2 Apakah data sudah terurut berdasarkan periode waktunya? 
+
+Data yang kita gunakan sudah terurut periode waktunya. Pada data awal, nilai pada waktu hanya menunjukkan angka tahun sehingga kita ubah agar bisa masuk ke dalam format date (proses ini sudah dilakukan).
+
+1.3 Periksa apakah terdapat waktu/periode yang terlewat (terdapat gap pada data waktu)
+```{r d11, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data1"}
+# your code here
+
+```
+
+1.4 Apakah ada data yang missing?
+```{r d12, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data1"}
+# your code here
+
+```
+
+### 2. Membuat object time series
+Melakukan konversi data dari bentuk dataframe ke bentuk time series object lalu periksa polanya dengan visualisasi. Buatlah object time series dengan nama `temp_ts`
+**EDIT**
+```{r d13, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data1"}
+temp_ts <- ts(data1$temp, frequency = 1)
+```
+
+
+```{r d14, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data1"}
+# your code here
+
+```
+
+### 3. Decompose
+Apakah data dengan pola tersebut memerlukan proses decompose? 
+
+Jika iya, silakan gunakan chunk di bawah, jika tidak silakan lewati proses ini.
+```{r d15, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data1"}
+# your code here
+
+```
+
+### 4. Splitting data
+Sebelum data dimasukkan sebagai data training, kita perlu melakukan proses splitting data. Karena kita memiliki data tahunan selama 45 tahun, maka coba bagi data yang akan digunakan menjadi data test sebesar data 5 tahun dan sisanya menjadi data train.
+```{r d16, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data1"}
+# your code here
+
+```
+
+### 5. Melakukan model fitting menggunakan data train
+Sesuai dengan pola data yang digunakan, diketahui bahwa data kita tidak memiliki pola seasonal maupun trend, oleh karena itu metode yang tepat digunakan adalah Simple Exponential Smoothing. Terdapat dua cara untuk menggunakan metode ini yaitu dengan fungsi `ets()` dan dengan fungsi `HoltWinters()`.
+
+5.1 Cara 1 (ets)
+```{r d17, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data1"}
+# your code here
+
+```
+
+5.2 Cara 2 (HoltWinters)
+```{r d18, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data1"}
+# your code here
+
+```
+
+### 6. Melakukan prediksi pada data test
+Berdasarkan kedua model yang telah dibuat di atas, gunakan fungsi `forecast()` untuk melakukan prediksi pada data test yang telah dipisahkan. Jangan lupa untuk menggunakan jumlah frequency yang sesuai dengan jumlah data test yang kita tentukan.
+```{r d19, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data1"}
+# your code here
+
+```
+
+### 7. Visualisasikan hasil prediksi
+Setelah prediksi dibuat, coba bandingkan menggunakan visualisasi hasil dari kedua model. Gunakan fungsi `autoplot()` dan `autolayer()` untuk menampilkan data awal beserta hasil forecast.
+```{r d110, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data1"}
+# your code here
+
+```
+
+### 8. Evaluasi hasil model 
+Bagaimana performa model yang telah dibuat? Coba cek keakuratan hasil model dengan metrics MAPE. Silakan gunakan fungsi yang telah diketahui.
+```{r d111, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data1"}
+# your code here
+
+```
+
+
+## Data 2
+Pada latihan ini kita akan menggunakan data jumlah ternak domba di Asia setiap tahunnya. Data ini dikumpulkan dari tahun 1961 - 2007.
+
+#### 1. Memeriksa kesiapan data time series
+1.1 Membaca data yang akan digunakan
+```{r data2, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+data2 <- data.frame(fpp2::livestock) %>% 
+  rename(count = fpp2..livestock) %>% 
+  mutate(year = c(1961:2007)) #%>% 
+  # mutate(year = as.Date(ISOdate(year, 12, 31)))
+```
+
+```{r}
+head(data2)
+```
+
+1.2 Apakah data sudah terurut berdasarkan periode waktunya? 
+
+Data yang kita gunakan sudah terurut periode waktunya. Pada data awal, nilai pada waktu hanya menunjukkan angka tahun sehingga kita ubah agar bisa masuk ke dalam format date (proses ini sudah dilakukan).
+
+1.3 Periksa apakah terdapat waktu/periode yang terlewat (terdapat gap pada data waktu)
+```{r d21, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data2"}
+# your code here
+
+```
+
+1.4 Apakah ada data yang missing?
+```{r d22, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data2"}
+# your code here
+
+```
+
+### 2. Membuat object time series
+2.1 Melakukan konversi data dari bentuk dataframe ke bentuk time series object
+```{r d23, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data2"}
+# your code here
+ 
+```
+
+2.2 Periksa pola data time series dengan visualisasi
+```{r d24, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data2"}
+# your code here
+
+```
+
+### 3. Decompose
+Apakah data dengan pola tersebut memerlukan proses decompose? Jika iya, silakan gunakan chunk di bawah, jika tidak silakan lewati proses ini.
+```{r d25, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data2"}
+# your code here
+
+```
+
+### 4. Splitting data
+Sebelum data dimasukkan sebagai data training, kita perlu melakukan proses splitting data. Karena kita memiliki data tahunan selama 46 tahun, maka coba bagi data yang akan digunakan menjadi data test sebesar data 6 tahun dan sisanya menjadi data train.
+```{r d26, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data2"}
+# your code here
+
+```
+
+### 5. Melakukan model fitting menggunakan data train
+Sesuai dengan pola data yang digunakan, diketahui bahwa data kita tidak memiliki pola seasonal tetapi memiliki trend, oleh karena itu metode yang tepat digunakan adalah Double Exponential Smoothing. Metode ini dapat digunakan dengan fungsi `HoltWinters()`.
+```{r d27, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data2"}
+# your code here
+
+```
+
+### 6. Melakukan prediksi pada data test
+Berdasarkan kedua model yang telah dibuat di atas, gunakan fungsi `forecast()` untuk melakukan prediksi pada data test yang telah dipisahkan. Jangan lupa untuk menggunakan jumlah frequency yang sesuai dengan jumlah data test yang kita tentukan.
+```{r d28, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data2"}
+# your code here
+
+```
+
+### 7. Visualisasikan hasil prediksi
+Setelah prediksi dibuat, coba lihat hasilnya menggunakan visualisasi. Gunakan fungsi `autoplot()` dan `autolayer()` untuk menampilkan data awal beserta hasil forecast.
+```{r d29, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data2"}
+# your code here
+
+```
+
+### 8. Evaluasi hasil model 
+Bagaimana performa model yang telah dibuat? Coba cek keakuratan hasil model dengan metrics MAPE. Silakan gunakan fungsi yang telah diketahui.
+```{r d210, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data2"}
+# your code here
+
+```
+
+
+## Data 3
+Pada latihan ini kita akan menggunakan data listrik yang dihasilkan oleh Amerika Serikat pada periode Januari 1973 - Juni 2013. Dua variabel pada data ini yaitu deret waktu (dalam interval bulan) serta jumlah listrik yang dihasilkan dengan satuan kilowatt hours (kWh).
+
+### 1. Memeriksa kesiapan data time series
+1.1 Membaca data yang akan digunakan
+```{r data3, echo=FALSE, results='hide', message=FALSE, warning=FALSE}
+data3 <- data.frame(date = seq(from = ymd("1973-01-01"), to = ymd("2013-06-01"), by="month"),
+  as.data.frame(fpp2::usmelec)) %>% # fpp2::qgas additive --- fpp2::usmelec multiplicative
+  rename(electricity = x)
+```
+
+```{r}
+head(data3)
+```
+
+1.2 Apakah data sudah terurut berdasarkan periode waktunya? 
+
+Data yang kita gunakan sudah terurut periode waktunya. Pada data awal, nilai pada waktu hanya menunjukkan angka tahun sehingga kita ubah agar bisa masuk ke dalam format date (proses ini sudah dilakukan).
+
+1.3 Periksa apakah terdapat waktu/periode yang terlewat (terdapat gap pada data waktu)
+```{r d31, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data3"}
+# your code here
+
+```
+
+1.4 Apakah ada data yang missing?
+```{r d32, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data3"}
+# your code here
+
+```
+
+### 2. Membuat object time series
+2.1 Melakukan konversi data dari bentuk dataframe ke bentuk time series object
+```{r d33, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data3"}
+# your code here
+ 
+```
+
+2.2 Periksa pola data time series dengan visualisasi
+```{r d34, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data3"}
+# your code here
+
+```
+
+### 3. Decompose
+Apakah data dengan pola tersebut memerlukan proses decompose? Jika iya, silakan gunakan chunk di bawah, jika tidak silakan lewati proses ini.
+```{r d35, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data3"}
+# your code here
+
+```
+
+### 4. Splitting data
+Sebelum data dimasukkan sebagai data training, kita perlu melakukan proses splitting data. Data yang kita miliki adalah data bulanan selama 40.5 tahun, sehingga jika dihitung maka kita memilikie 486 baris data. Silakan coba pisahkan data tersebut dengan mengambil 8 tahun data terakhir sebagai data test dan sisanya sebagai data train.
+```{r d36, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data3"}
+# your code here
+
+```
+
+### 5. Melakukan pemrosesan data serta fitting model
+Sesuai dengan pola data yang digunakan, diketahui bahwa data kita memiliki pola seasonal serta trend, oleh karena itu metode yang tepat digunakan adalah Triple Exponential Smoothing dan SARIMA. 
+
+5.1 Triple Exponential Smoothing
+
+Pada metode ini, tidak diperlukan pemrosesan data tambahan. Kita bisa menggunakan langsung fungsi `Holtwinters()` pada bagian ini untuk melakukan fitting data train, jangan lupa untuk memasukkan argumen yang diperlukan.
+```{r d37, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data3"}
+# your code here
+
+```
+
+5.2 SARIMA
+
+5.2.1 Cek stasionarity data
+
+Gunakan teknik differencing serta adf test untuk melihat apakah data ini sudah stasioner atau belum.
+```{r d38, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data3"}
+# your code here
+
+```
+
+Dari hasil differencing tersebut, kita bisa mendapatkan nilai d dan D dari bentuk ARIMA(p,d,q)(P,D,Q)[frequency]
+
+5.2.2 Cari nilai p, q dan P, Q
+
+Nilai tersebut dapat dicari menggunakan acf dan pacf.
+```{r d39, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data3"}
+# your code here
+
+```
+
+5.2.3 Model fitting
+
+Pada bagian ini, buatlah model dengan hasil tuning yang telah kita lakukan, serta gunakan pula auto arima sebagai pembanding
+```{r d310, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data3"}
+# your code here
+
+```
+
+5.2.4 Cek aic
+```{r d311, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data3"}
+# your code here
+
+```
+
+5.2.5 Cek akurasi model
+```{r d312, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data3"}
+# your code here
+
+```
+
+### 6. Melakukan prediksi pada data test
+Berdasarkan model-model yang telah dibuat di atas, gunakan fungsi `forecast()` untuk melakukan prediksi pada data test yang telah dipisahkan. Jangan lupa untuk menggunakan jumlah frequency yang sesuai dengan jumlah data test yang kita tentukan. Gunakan 3 model yaitu model Triple Exponential Smoothing, auto arima, dan SARIMA terbaik yang ditemukan.
+```{r d313, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data3"}
+# your code here
+
+```
+
+### 7. Visualisasikan hasil prediksi
+Setelah prediksi dibuat, coba lihat hasilnya menggunakan visualisasi. Gunakan fungsi `autoplot()` dan `autolayer()` untuk menampilkan data awal beserta hasil forecast.
+```{r d314, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data3"}
+# your code here
+
+```
+
+### 8. Evaluasi hasil model 
+Bagaimana performa model yang telah dibuat? Coba cek keakuratan hasil model dengan metrics MAPE. Silakan gunakan fungsi yang telah diketahui.
+```{r d315, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data3"}
+# your code here
+
+```
+
+
+
+
+

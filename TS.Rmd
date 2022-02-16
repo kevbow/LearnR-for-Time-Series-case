@@ -339,7 +339,9 @@ elec_ar2 <- arima(x = elec_train, order = c(1,0,2), seasonal = c(2,1,1))
 
 # forecast
 tes_forecast <- forecast(model_tes, h=8*12)
-best_arima_forecast <- forecast(elec_ar2, h=8*12)
+arima1_forecast <- forecast(elec_ar1, h=8*12)
+arima2_forecast <- forecast(elec_ar2, h=8*12)
+auto_arima_forecast <- forecast(elec_auto, h=8*12)
 ```
 
 ```{r}
@@ -489,20 +491,13 @@ Pada bagian ini, buatlah 2 model secara manual dengan fungsi `arima()` berdasark
 # elec_ar2 <- arima(..., order = ..., seasonal = ...)
 ```
 
-5.2.5 Cek akurasi model
-
-Carilah model hasil ARIMA yang memiliki akurasi paling baik. Model ini yang nantinya akan kita gunakan pada proses selanjutnya.
-```{r d312, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data3"}
-accuracy(elec_ar1)
-accuracy(elec_ar2)
-accuracy(elec_auto)
-```
-
 ### 6. Melakukan prediksi pada data test
-Berdasarkan model-model yang telah dibuat di atas, gunakan fungsi `forecast()` untuk melakukan prediksi pada data test yang telah dipisahkan. Jangan lupa untuk menggunakan jumlah frequency yang sesuai dengan jumlah data test yang kita tentukan. Gunakan 2 model yaitu model Triple Exponential Smoothing dengan nama `tes_forecast` dan model hasil SARIMA terbaik yang ditemukan dengan nama `best_arima_forecast`. Setelah prediksi dibuat, coba lihat hasilnya menggunakan visualisasi. Gunakan fungsi `autoplot()` dan `autolayer()` untuk menampilkan hasil prediksi dari kedua forecast yang telah dilakukan.
+Berdasarkan model-model yang telah dibuat di atas, gunakan fungsi `forecast()` untuk melakukan prediksi pada data test yang telah dipisahkan. Jangan lupa untuk menggunakan jumlah frequency yang sesuai dengan jumlah data test yang kita tentukan. Gunakan 4 model yang telah dibuat yaitu model Triple Exponential Smoothing dengan nama `tes_forecast` dan model hasil ARIMA dengan nama `arima1_forecast`, `arima2_forecast`, dan `auto_arima_forecast`. Setelah prediksi dibuat, coba lihat hasilnya menggunakan visualisasi. Gunakan fungsi `autoplot()` dan `autolayer()` untuk menampilkan hasil prediksi dari kedua forecast yang telah dilakukan.
 ```{r d313, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data3"}
 # tes_forecast <- 
-# best_arima_forecast <- 
+# arima1_forecast <- 
+# arima2_forecast <- 
+# auto_arima_forecast <- 
 
 # elec_ts %>% 
 # ...
@@ -510,19 +505,23 @@ Berdasarkan model-model yang telah dibuat di atas, gunakan fungsi `forecast()` u
 ```
 
 ### 7. Evaluasi hasil model 
-Bagaimana performa model yang telah dibuat? Coba cek keakuratan hasil model dengan metrics MAPE. Gunakan fungsi `MAPE()` pada bagian ini.
+Bagaimana performa model yang telah dibuat? Coba cek keakuratan hasil model dengan metrics MAPE. Gunakan fungsi `MAPE()` pada bagian ini untuk keempat model yang telah dibuat.
 ```{r d315, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data3"}
-
+# MAPE(y_pred = ... , y_true = ...)*100
+# ...
 ```
 
 ```{r letter-e, echo=FALSE}
 quiz(
   question("Setelah melihat hasil evaluasi di atas, model mana yang lebih baik akurat?",
-           type = "single", correct = "Yap, tepat! Model ARIMA memiliki nilai MAPE yang lebih kecil, error yang dihasilkan lebih kecil sehingga dapat dikatakan model ARIIMA lebih baik.",
+           type = "single", correct = "Yap, tepat! Model ARIMA opsi 1 memiliki nilai MAPE yang lebih kecil.",
            incorrect = "Jawaban Anda masih kurang tepat", 
            allow_retry = TRUE, random_answer_order = FALSE,
            answer("Model dengan metode Triple Exponential Smoothing"),
-           answer("Model dengan metode ARIMA", correct = TRUE))
+           answer("Model dengan metode ARIMA opsi 1", correct = TRUE),
+           answer("Model dengan metode ARIMA opsi 2"),
+           answer("Model dengan metode auto ARIMA")
+           )
 )
 ```
 

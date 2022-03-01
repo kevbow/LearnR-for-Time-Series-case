@@ -52,7 +52,7 @@ Setelah memastikan ketiga hal tersebut sudah terpenuhi maka data time series sud
     - Triple Exponential Smoothing (Holts Winter) → model yang digunakan untuk tipe data dengan seasonal dan trend.
 3. Autoregresive Integrated Moving Average (ARIMA) → model yang dapat digunakan untuk tipe data dengan seasonal dan trend.
 
-Dengan beberapa metode forecasting di atas maka analisis time series kita hampir selesai. Setelah itu kita tinggal melihat seberapa baik model yang kita buat. Metric yang dapat digunakan untuk melakukan evaluasi model yaitu MAPE.
+Dengan beberapa metode forecasting di atas maka analisis time series kita hampir selesai. Setelah itu kita tinggal melihat seberapa baik model yang kita buat. Evaluasi model dapat dilakukan dengan melihat error antara hasil prediksi model dengan nilai observasi, beberapa contoh metric yang dapat digunakan yaitu RMSE, MAE, MAPE, dsb.
 
 ## Case 1, Simple Exponential Smoothing
 Pada latihan ini kita akan menggunakan data temperatur maksimum tahunan di Moorabbin Airport, Melbourne pada tahun 1971 - 2016. Pada data ini terdapat dua variabel yaitu tahun pengukuran serta temperatur maksimum pada tahun tersebut dengan satuan derajat Celcius. 
@@ -130,7 +130,7 @@ Jika iya, silakan gunakan chunk di bawah, jika tidak silakan lewati proses ini.
 ```
 
 ### 4. Splitting data
-Sebelum data dimasukkan sebagai data training, kita perlu melakukan proses splitting data. Karena kita memiliki data tahunan selama 45 tahun, maka coba bagi data yang akan digunakan menjadi data test sebesar data 5 tahun dan sisanya menjadi data train. Berikan nama `temp_train` pada data train serta `temp_test` pada data test.
+Sebelum data dimasukkan sebagai data training, kita perlu melakukan proses splitting data. Karena kita memiliki data tahunan selama 46 tahun, maka coba bagi data yang akan digunakan menjadi data test sebesar data 5 tahun dan sisanya menjadi data train. Berikan nama `temp_train` pada data train serta `temp_test` pada data test.
 ```{r d15, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data1"}
 # temp_train <- head(..., -5)
 # temp_test <- tail(..., 5)
@@ -163,10 +163,11 @@ Setelah prediksi, gunakan chunk yang sama untuk membandingkan hasilnya dengan vi
 ```
 
 ### 7. Evaluasi hasil model 
-Bagaimana performa model yang telah dibuat? Coba cek keakuratan hasil model dengan metrics MAPE. Silakan gunakan fungsi `accuracy()` pada kedua hasil forecast di atas.
+Bagaimana performa model yang telah dibuat? Coba cek keakuratan hasil model dengan metrics MAPE. Silakan gunakan fungsi `accuracy()` pada kedua hasil forecast di atas dan cek errornya dibandingkan dengan nilai asli pada data test, gunakan nilai rata-rata dari hasil prediksi.
 ```{r d110, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data1"}
-# accuracy(...)
-# accuracy(...)
+# accuracy(..., ...)
+# accuracy(..., ...)
+
 ```
 
 ```{r letter-a1, echo=FALSE}
@@ -175,8 +176,8 @@ quiz(
            type = "multiple", correct = "Yap, tepat!",
            incorrect = "Jawaban Anda masih kurang tepat", 
            allow_retry = TRUE, random_answer_order = FALSE,
-           answer("ets()", correct = TRUE), 
-           answer("HoltWinters()"))
+           answer("ets()"), 
+           answer("HoltWinters()", correct = TRUE))
 )
 ```
 
@@ -251,7 +252,7 @@ quiz(
 Seperti yang telah disebutkan di atas, data yang kita gunakan tidak memerlukan proses decompose sehingga langkah ini bisa kita lewati.
 
 ### 4. Splitting data
-Sebelum data dimasukkan sebagai data training, kita perlu melakukan proses splitting data. Karena kita memiliki data tahunan selama 46 tahun, maka coba bagi data yang akan digunakan menjadi data test sebesar data 6 tahun dan sisanya menjadi data train. Berilah nama `lstock_train` pada data train serta `lstock_test` pada data test.
+Sebelum data dimasukkan sebagai data training, kita perlu melakukan proses splitting data. Karena kita memiliki data tahunan selama 47 tahun, maka coba bagi data yang akan digunakan menjadi data test sebesar data 6 tahun dan sisanya menjadi data train. Berilah nama `lstock_train` pada data train serta `lstock_test` pada data test.
 ```{r d25, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data2"}
 # lstock_train <- 
 # lstock_test <- 
@@ -276,7 +277,7 @@ Setelah prediksi dibuat, coba lihat hasilnya menggunakan visualisasi. Cobalah su
 ```{r parson1, echo = FALSE}
 question_parsons(
   initial = c(
-    "autolayer(des_forecast$fitted, series = 'train')",
+    "autolayer(model_des$fitted[,1], series = 'train')",
     "autoplot()",
     "lstock_ts", 
     "autolayer(des_forecast$mean, series = 'test')",
@@ -286,7 +287,7 @@ question_parsons(
     c(
     "lstock_ts",
     "autoplot()",
-    "autolayer(des_forecast$fitted, series = 'train')",
+    "autolayer(model_des$fitted[,1], series = 'train')",
     "autolayer(des_forecast$mean, series = 'test')"
     )
   ),

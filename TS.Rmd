@@ -106,8 +106,14 @@ Proses ini dapat kita lewati karena data yang kita gunakan sudah terurut periode
 
 ```
 
+1.5 Mencari pola data untuk menentukan frequency
+Jika syarat-syarat data time series di atas sudah terpenuhi, kita dapat melanjutkan proses ke tahap berikutnya. Tetapi sebelum membuat object time series, mari kita lihat pola data menggunakan visualisasi base plot, gunakan fungsi `plot()` dan gunakan parameter `type = "l"` untuk membuat visualisasi menjadi bentuk garis. 
+```{r d12.5, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data1"}
+# plot(..., ..., type = ...)
+```
+
 ### 2. Membuat object time series
-Melakukan konversi data dari bentuk dataframe ke bentuk time series object lalu periksa polanya dengan visualisasi. Buatlah object time series dengan nama `temp_ts`.
+Melakukan konversi data dari bentuk dataframe ke bentuk time series object lalu periksa polanya dengan visualisasi. Buatlah object time series dengan nama `temp_ts`. Kita dapat menentukan nilai frequency menggunakan visualisasi yang sudah dibuat sebelumnya.
 ```{r d13, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data1"}
 # temp_ts <- ts(..., start = ..., frequency = ...)
 ```
@@ -116,7 +122,7 @@ Melakukan konversi data dari bentuk dataframe ke bentuk time series object lalu 
 ```{r letter-a, echo=FALSE}
 quiz(
   question("Apakah data dengan pola tersebut memerlukan proses decompose?",
-           type = "single", correct = "Betul, karena data yang kita gunakan tidak memiliki pola trend dan seasonal",
+           type = "single", correct = "Betul, karena data yang kita gunakan tidak memiliki pola trend dan seasonal, selain itu jika menggunakan frequency = 1 ketika membuat object ts maka data akan dianggap tidak memiliki pola berulang sehingga tidak dapat di decompose.",
            incorrect = "Jawaban Anda masih kurang tepat", 
            allow_retry = TRUE, random_answer_order = FALSE,
            answer("Ya"), 
@@ -228,6 +234,12 @@ Proses ini dapat kita lewati karena data yang kita gunakan sudah terurut periode
 1.4 Apakah ada data yang missing?
 ```{r d22, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data2"}
 
+```
+
+1.5 Mencari pola data untuk menentukan frequency
+Jika syarat-syarat data time series di atas sudah terpenuhi, kita dapat melanjutkan proses ke tahap berikutnya. Tetapi sebelum membuat object time series, mari kita lihat pola data menggunakan visualisasi base plot, gunakan fungsi `plot()` dan gunakan parameter `type = "l"` untuk membuat visualisasi menjadi bentuk garis. 
+```{r d22.5, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data2"}
+# plot(..., ..., ...)
 ```
 
 ### 2. Membuat object time series
@@ -348,6 +360,10 @@ auto_arima_forecast <- forecast(elec_auto, h=8*12)
 ```{r}
 head(data3)
 ```
+Berbeda dengan kedua data sebelumnya, pada `data3` kita memiliki interval waktu yang berbeda. Terdapat dua buah fitur yaitu:
+
+- `electricity`: jumlah listrik yang dihasilkan (kWh)
+- `date`: waktu yang bersangkutan (bulan)
 
 1.2 Apakah data sudah terurut berdasarkan periode waktunya? 
 
@@ -361,6 +377,12 @@ Proses ini dapat kita lewati karena data yang kita gunakan sudah terurut periode
 1.4 Apakah ada data yang missing?
 ```{r d32, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data3"}
 
+```
+
+1.5 Mencari pola data untuk menentukan frequency
+Jika syarat-syarat data time series di atas sudah terpenuhi, kita dapat melanjutkan proses ke tahap berikutnya. Tetapi sebelum membuat object time series, mari kita lihat pola data menggunakan visualisasi base plot, gunakan fungsi `plot()` dan gunakan parameter `type = "l"` untuk membuat visualisasi menjadi bentuk garis. 
+```{r d32.5, exercise = TRUE, exercise.eval = TRUE, exercise.setup = "data3"}
+# plot(..., ..., ...)
 ```
 
 ### 2. Membuat object time series
@@ -522,6 +544,43 @@ quiz(
            answer("Model dengan metode ARIMA opsi 1", correct = TRUE),
            answer("Model dengan metode ARIMA opsi 2"),
            answer("Model dengan metode auto ARIMA")
+           )
+)
+```
+
+### 8. Pengecekan asumsi
+
+8.1 No-autocorrelation residual
+
+Pada bagian ini, kita ingin melakukan pengecekan apakah terdapat autokorelasi residual. Kita akan mencari nilai p-value dan menggunakan default alpha = 0.05, lalu bandingkan keduanya dengan hipotesa yang digunakan yaitu: 
+$H_0$: residual has no-autocorrelation
+$H_1$: residual has autocorrelation
+
+Lakukan uji Ljung-box dengan menggunakan fungsi `Box.test(residual_model, type = "Ljung-Box)`
+```{r}
+
+```
+
+8.2 Normality residual
+
+Pada pengecekan asumsi ini, kita menggunakan default alpha = 0.05 serta hipotesa berikut: 
+$H_0$: residual menyebar normal
+$H_1$: residual tidak menyebar normal
+
+Lakukan uji normality menggunakan saphiro test dengan fungsi `saphiro.test()`
+```{r}
+shapiro.test(elec_ar1$residuals)
+```
+```{r letter-f, echo=FALSE}
+quiz(
+  question("Bagaimana hasil asumsi yang didapatkan dari model terbaik?",
+           type = "single", correct = "Betul, sayangnya kedua asumsi belum terpenuhi, nilai p-value dari model ARIMA opsi 1 untuk kedua asumsi kurang dari 0.05.",
+           incorrect = "Jawaban Anda masih kurang tepat", 
+           allow_retry = TRUE, random_answer_order = FALSE,
+           answer("no-autocorrelation terpenuhi, normality terpenuhi"),
+           answer("no-autocorrelation tidak terpenuhi, normality terpenuhi"),
+           answer("no-autocorrelation terpenuhi, normality tidak terpenuhi"),
+           answer("no-autocorrelation tidak terpenuhi, normality tidak terpenuhi", correct = TRUE)
            )
 )
 ```
